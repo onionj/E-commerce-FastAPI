@@ -2,7 +2,7 @@
 
 
 ## tech
-FastAPI
+FastAPI \
 tortoise orm
 
 # endpoints:
