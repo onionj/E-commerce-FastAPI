@@ -6,7 +6,7 @@ app = FastAPI(title="E-commerce API", version="0.0.5")
 
 
 @app.get("/")
-async def index():
+def index():
     return {"message": "hello world"}
 
 
