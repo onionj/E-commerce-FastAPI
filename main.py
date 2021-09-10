@@ -2,7 +2,7 @@ from fastapi import FastAPI
 from tortoise.contrib.fastapi import register_tortoise
 from models import *
 
-app = FastAPI(title="E-commerce API")
+app = FastAPI(title="E-commerce API", version="0.0.5")
 
 
 @app.get("/")
