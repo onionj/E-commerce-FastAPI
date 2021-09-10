@@ -1,2 +1,5 @@
-# blog
-blog created by fastapi + fastapi-users + mongodb database
+ ## E-commerce API with FastAPI 
+
+# endpoints:
+
+coming soon
