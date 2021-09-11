@@ -26,11 +26,6 @@ async def create_business(
         # send the email
 
 
-@app.get("/")
-def index():
-    return {"message": "hello world"}
-
-
 @app.post("/registration/", tags=["User"], status_code=status.HTTP_201_CREATED)
 async def user_registration(user: user_pydanticIn):
     user_info = user.dict(exclude_unset=True)
