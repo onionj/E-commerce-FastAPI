@@ -41,7 +41,7 @@ user_pydantic = pydantic_model_creator(
     User, name="User", exclude=("is_verifide", ))
 
 user_pydanticIn = pydantic_model_creator(
-    User, name="UserIn", exclude_readonly=True)
+    User, name="UserIn", exclude_readonly=True, exclude=("is_verifide", "join_date"))
 
 user_pydanticOut = pydantic_model_creator(
     User, name="UserOut", exclude=("password", ))
