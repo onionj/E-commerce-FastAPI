@@ -15,14 +15,14 @@ from tortoise.signals import post_save
 from tortoise import BaseDBAsyncClient
 from typing import List, Optional, Type
 
+# email
 from emails import send_mail
 
-template = Jinja2Templates(directory="templates")
 
-app = FastAPI(title="E-commerce API", version="0.0.2")
+app = FastAPI(title="E-commerce API", version="0.0.3")
 
 
-@post_save
+@post_save(User)
 async def create_business(
         sender: "Type[User]",
         instance: User,
@@ -41,20 +41,34 @@ async def create_business(
 @app.post("/registration/", tags=["User"], status_code=status.HTTP_201_CREATED, response_model=user_pydanticOut)
 async def user_registration(user: user_pydanticIn):
     user_info = user.dict(exclude_unset=True)
+
+    if len(user_info["password"]) < 8:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, detail="Password must be longer than 8 characters")
+    if await User.exists(username=user_info.get("username")):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, detail="Username already exists")
+    if await User.exists(email=user_info.get("email")):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, detail="Email already exists")
+
     user_info["password"] = get_hashed_password(user_info["password"])
+
     user_obj = await User.create(**user_info)
-    user_new = await user_pydantic.from_tortoise_orm(user_obj)
-    return user_new.dict()
+    user_new = await user_pydanticOut.from_tortoise_orm(user_obj)
+    return user_new
+
+
+template = Jinja2Templates(directory="templates")
 
 
 @app.get("/verification", response_class=HTMLResponse, tags=["User"])
 async def email_verification(request: Request, token: str):
     user = await very_token(token)
-
-    if user and not user.is_verifide:
+    if user:
         user.is_verifide = True
         await user.save()
-        return template.TemplateResponse("verification.html", {"request": Request, "username": user.username}, )
+        return template.TemplateResponse("verification.html", {"request": request, "username": user.username})
 
     raise HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
