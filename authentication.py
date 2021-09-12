@@ -15,7 +15,9 @@ def get_hashed_password(password):
 
 async def very_token(token: str):
     try:
-        payload = jwt.decode(token, get_settings().SECRET, algorithm=["HS256"])
+
+        payload = jwt.decode(token, get_settings().SECRET,
+                             algorithms=["HS256"])
         user = await User.get(id=payload.get("id"))
         return user
 
