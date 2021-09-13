@@ -41,6 +41,8 @@ async def create_business(
 async def user_registration(user: user_pydanticIn):
     user_info = user.dict(exclude_unset=True)
 
+    # This is a bad way to do it:
+    # TODO fix this
     if len(user_info["password"]) < 8:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST, detail="Password must be longer than 8 characters")
@@ -72,8 +74,9 @@ template = Jinja2Templates(directory="templates")
 async def email_verification(request: Request, token: str):
     user = await very_token(token)
     if user:
-        user.is_verifide = True
-        await user.save()
+        if not user.is_verifide:
+            user.is_verifide = True
+            await user.save()
         return template.TemplateResponse("verification.html", {"request": request, "username": user.username})
 
     raise HTTPException(
