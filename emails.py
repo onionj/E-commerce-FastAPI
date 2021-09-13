@@ -19,12 +19,12 @@ conf = ConnectionConfig(
     MAIL_USERNAME=get_settings().MAIL_USERNAME,
     MAIL_PASSWORD=get_settings().MAIL_PASSWORD,
     MAIL_FROM=get_settings().MAIL_FROM,
-    MAIL_PORT=587,
-    MAIL_SERVER="smtp.gmail.com",
-    MAIL_TLS=True,
-    MAIL_SSL=False,
-    USE_CREDENTIALS=True,
-    VALIDATE_CERTS=True
+    MAIL_PORT=get_settings().MAIL_PORT,
+    MAIL_SERVER=get_settings().MAIL_SERVER,
+    MAIL_TLS=get_settings().MAIL_TLS,
+    MAIL_SSL=get_settings().MAIL_SSL,
+    USE_CREDENTIALS=get_settings().USE_CREDENTIALS,
+    VALIDATE_CERTS=get_settings().VALIDATE_CERTS
 )
 
 
@@ -37,7 +37,6 @@ async def send_mail(email: List[EmailStr], instance: User):
     }
 
     token = jwt.encode(token_data, get_settings().SECRET, algorithm="HS256")
-
     template = f"""
     <!DOCTYPE html>
     <html lang="en">
@@ -64,6 +63,12 @@ async def send_mail(email: List[EmailStr], instance: User):
     </body>
     </html>
     """
+    # print(f"""
+
+    # your mail:
+    # {SITE_URL}verification/?token={token}
+
+    # """)
     message = MessageSchema(
         subject=SITE_NAME,
         recipients=email,  # List of recipients,
