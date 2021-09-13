@@ -42,7 +42,7 @@ async def user_registration(user: user_pydanticIn):
     user_info = user.dict(exclude_unset=True)
 
     # This is a bad way to do it:
-    # TODO fix this
+    # TODO fix this, create custom 'user_pydanticIn for validate data '
     if len(user_info["password"]) < 8:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST, detail="Password must be longer than 8 characters")
