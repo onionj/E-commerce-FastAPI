@@ -1,9 +1,8 @@
-from re import template
 from fastapi import FastAPI, status, Request, HTTPException
 from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
 # database
-from authentication import (get_hashed_password, very_token)
+from authentication import (get_hashed_password, very_token, not_email)
 from tortoise.contrib.fastapi import register_tortoise
 from models import (User, Business, Product,
                     user_pydantic, user_pydanticIn, user_pydanticOut,
@@ -45,6 +44,13 @@ async def user_registration(user: user_pydanticIn):
     if len(user_info["password"]) < 8:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST, detail="Password must be longer than 8 characters")
+    if len(user_info["username"]) < 5:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, detail="Username must be longer than 5 characters")
+    if not_email(user_info["email"]):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, detail="This is not a valid email")
+
     if await User.exists(username=user_info.get("username")):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST, detail="Username already exists")

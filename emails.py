@@ -5,7 +5,7 @@ from models import User
 from fastapi import (FastAPI, status, BackgroundTasks,
                      UploadFile, File, Form, Depends, HTTPException, )
 from fastapi_mail import FastMail, MessageSchema, ConnectionConfig
-from pydantic import BaseModel
+from pydantic.error_wrappers import ValidationError
 from pydantic import BaseModel, EmailStr
 import jwt
 
@@ -69,12 +69,12 @@ async def send_mail(email: List[EmailStr], instance: User):
     # {SITE_URL}verification/?token={token}
 
     # """)
+
     message = MessageSchema(
-        subject=SITE_NAME,
+        subject=SITE_NAME + " account verification",
         recipients=email,  # List of recipients,
         body=template,
         subtype="html"
     )
-
     fm = FastMail(conf)
     await fm.send_message(message)

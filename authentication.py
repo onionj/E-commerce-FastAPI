@@ -1,3 +1,4 @@
+import re
 from passlib.context import CryptContext
 from passlib.utils.decor import deprecated_function
 from fastapi import HTTPException, status
@@ -27,3 +28,14 @@ async def very_token(token: str):
             detail="Invalid Token",
             headers={"WWW-Authenticate": "Bearer"}
         )
+
+
+regex = '^[a-z0-9]+[\._]?[a-z0-9]+[@]\w+[.]\w{2,3}$'
+
+
+def not_email(email):
+    """if valid mail: return 'True' """
+    if(re.search(regex, email)):
+        return False
+    else:
+        return True
