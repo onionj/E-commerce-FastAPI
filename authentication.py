@@ -29,12 +29,13 @@ async def very_token(token: str):
             headers={"WWW-Authenticate": "Bearer"}
         )
 
-
+# bug: sam_ple@gma.com:Trye ; sam_p_le@gma.com: False!!
 regex = '^[a-z0-9]+[\._]?[a-z0-9]+[@]\w+[.]\w{2,3}$'
 
 
-def not_email(email):
-    """if valid mail: return 'True' """
+def is_not_email(email):
+    """if valid mail: return 'True' \n 
+     ** This is a simple way to do this and is not recommended for a real project ** """
     if(re.search(regex, email)):
         return False
     else:
