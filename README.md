@@ -4,6 +4,7 @@
 ## tech
 FastAPI \
 tortoise orm
+jwt token
 
 # endpoints:
 
