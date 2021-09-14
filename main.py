@@ -1,4 +1,4 @@
-from fastapi import FastAPI, status, Request, HTTPException
+from fastapi import FastAPI, status, Request, HTTPException, Depends
 from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
 # database
@@ -7,8 +7,12 @@ from models import (User, Business, Product,
                     user_pydantic, user_pydanticIn, user_pydanticOut,
                     business_pydantic, business_pydanticIn,
                     product_pydantic, product_pydanticIn)
+
 # authentication
-from authentication import (get_hashed_password, very_token, is_not_email)
+from authentication import (
+    get_hashed_password, very_token, very_token_email, is_not_email, token_generator)
+from fastapi.security import (OAuth2PasswordBearer, OAuth2PasswordRequestForm)
+
 # signal
 from tortoise.signals import post_save
 from tortoise import BaseDBAsyncClient
@@ -19,6 +23,39 @@ from emails import send_mail
 
 
 app = FastAPI(title="E-commerce API", version="0.0.3")
+
+oauth_scheme = OAuth2PasswordBearer(tokenUrl="token")
+
+
+@app.post("/token", tags=["User"])
+async def generate_token(request_form: OAuth2PasswordRequestForm = Depends()):
+    token = await token_generator(request_form.username, request_form.password)
+    return {"access_token": token, "token_type": "bearer"}
+
+
+async def get_current_user(token: str = Depends(oauth_scheme)):
+    return await very_token(token)
+
+
+@app.post("/user/me", tags=["User"])
+async def user_login(user: user_pydanticIn = Depends(get_current_user)):
+    if not user.is_verifide:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Email not verifide",
+            headers={"WWW-Authenticate": "Bearer"}
+        )
+    business = await Business.get(owner=user)
+    return {
+        "status": "ok",
+        "data": {
+            "username": user.username,
+            "email": user.email,
+            "is_verifide": user.is_verifide,
+            "join_date": user.join_date.strftime("%b %d %Y"),
+            "business": await business_pydantic.from_tortoise_orm(business)
+        }
+    }
 
 
 @post_save(User)
@@ -72,12 +109,17 @@ template = Jinja2Templates(directory="templates")
 
 @app.get("/verification", response_class=HTMLResponse, tags=["User"])
 async def email_verification(request: Request, token: str):
-    user = await very_token(token)
+    user = await very_token_email(token)
     if user:
         if not user.is_verifide:
             user.is_verifide = True
             await user.save()
-        return template.TemplateResponse("verification.html", {"request": request, "username": user.username})
+        context = {
+            "request": request,
+            "is_verifide": user.is_verifide,
+            "username": user.username
+        }
+        return template.TemplateResponse("verification.html", context)
 
     raise HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,

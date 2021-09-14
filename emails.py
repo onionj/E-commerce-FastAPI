@@ -33,10 +33,12 @@ async def send_mail(email: List[EmailStr], instance: User):
 
     token_data = {
         "id": instance.id,
-        "username": instance.username
+        "username": instance.username,
+        "email": instance.email
     }
 
     token = jwt.encode(token_data, get_settings().SECRET, algorithm="HS256")
+
     template = f"""
     <!DOCTYPE html>
     <html lang="en">
@@ -56,7 +58,7 @@ async def send_mail(email: List[EmailStr], instance: User):
             
             <a style = "display:marign-top: 1rem ; padding: 1rem; border-redius: 0.5rem;
              font-size:1rem; text-decoration: no; background: #0275d8; color:white"
-             href="{SITE_URL}verification/?token={token}>
+             href="{SITE_URL}verification/?token={token}">
                 Verify your email
              </a>
         </div>
