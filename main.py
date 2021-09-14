@@ -1,4 +1,5 @@
-from fastapi import FastAPI, status, Request, HTTPException, Depends
+from fastapi import (FastAPI, status, Request,
+                     HTTPException, Depends)
 from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
 # database
@@ -9,8 +10,9 @@ from models import (User, Business, Product,
                     product_pydantic, product_pydanticIn)
 
 # authentication
-from authentication import (
-    get_hashed_password, very_token, very_token_email, is_not_email, token_generator)
+from authentication import (get_hashed_password,
+                            very_token, very_token_email,
+                            is_not_email, token_generator)
 from fastapi.security import (OAuth2PasswordBearer, OAuth2PasswordRequestForm)
 
 # signal
@@ -23,6 +25,7 @@ from emails import send_mail
 
 
 app = FastAPI(title="E-commerce API", version="0.0.3")
+
 
 oauth_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
