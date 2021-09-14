@@ -1,18 +1,14 @@
 from typing import List
 
 from models import User
-
-from fastapi import (FastAPI, status, BackgroundTasks,
-                     UploadFile, File, Form, Depends, HTTPException, )
 from fastapi_mail import FastMail, MessageSchema, ConnectionConfig
-from pydantic.error_wrappers import ValidationError
-from pydantic import BaseModel, EmailStr
+from pydantic import EmailStr
 import jwt
 
 from config import get_settings
 
 SITE_URL = "http://localhost:8000/"
-SITE_NAME = "Nice shop"
+SITE_NAME = "my-shop"
 
 
 conf = ConnectionConfig(
@@ -58,7 +54,7 @@ async def send_mail(email: List[EmailStr], instance: User):
             
             <a style = "display:marign-top: 1rem ; padding: 1rem; border-redius: 0.5rem;
              font-size:1rem; text-decoration: no; background: #0275d8; color:white"
-             href="{SITE_URL}verification/?token={token}">
+             href="{SITE_URL}verification/email/?token={token}">
                 Verify your email
              </a>
         </div>
@@ -68,7 +64,7 @@ async def send_mail(email: List[EmailStr], instance: User):
     # print(f"""
 
     # your mail:
-    # {SITE_URL}verification/?token={token}
+    # {SITE_URL}verification/email/?token={token}
 
     # """)
 
