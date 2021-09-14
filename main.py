@@ -23,11 +23,20 @@ from typing import List, Optional, Type
 # email
 from emails import send_mail
 
+# images
+from fastapi import File, UploadFile
+from fastapi.staticfiles import StaticFiles
+from PIL import Image
+import secrets
+
 
 app = FastAPI(title="E-commerce API", version="0.0.3")
 
 
 oauth_scheme = OAuth2PasswordBearer(tokenUrl="token")
+
+# static file setup config
+app.mount("/static", StaticFiles(directory="static"), name="static")
 
 
 @app.post("/token", tags=["User"])
@@ -129,6 +138,47 @@ async def email_verification(request: Request, token: str):
         detail="Invalid Token or expired token",
         headers={"WWW-Authenticate": "Bearer"}
     )
+
+
+@app.post("/uploadfile/profile", tags=["User"])
+async def upload_profile_image(file: UploadFile = File(..., max_lenght=10485760),
+                               user: user_pydantic = Depends(get_current_user)):
+
+    FILEPATH = "./static/images/"
+    file_name = file.filename
+    try:
+        extension = file_name.split(".")[1]
+    finally:
+        if extension not in ["png", "jpg", "jpeg"]:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
+                                detail="File extension not allowed")
+
+    token_name = "logo" + secrets.token_hex(10) + "." + extension
+    generated_name = FILEPATH + token_name
+    file_content = await file.read()
+
+    with open(generated_name, "wb") as f:
+        f.write(file_content)
+
+    # PILLOW
+    img = Image.open(generated_name)
+    img = img.resize(size=(200, 200))
+    img.save(generated_name)
+
+    business = await Business.get(owner=user)
+    owner = await business.owner
+
+    print(owner, user)
+    if owner == user:
+        business.logo = generated_name
+        await business.save()
+        return await business_pydantic.from_tortoise_orm(business)
+    else:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Not authenticated to perform this action",
+            headers={"WWW-Authenticate": "Bearer"}
+        )
 
 
 register_tortoise(

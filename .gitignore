@@ -1,6 +1,7 @@
 *shm
 *wal
 db*
+static/images/logo*
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
