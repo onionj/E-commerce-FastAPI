@@ -31,7 +31,8 @@ from PIL import Image
 import secrets
 
 
-app = FastAPI(title="E-commerce API", version="0.0.3")
+app = FastAPI(title="E-commerce API", version="0.1.1",
+              description=" E-commerce API created with FastAPI and jwt Authenticated")
 
 
 oauth_scheme = OAuth2PasswordBearer(tokenUrl="token")
