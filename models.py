@@ -46,6 +46,9 @@ user_pydanticIn = pydantic_model_creator(
 user_pydanticOut = pydantic_model_creator(
     User, name="UserOut", exclude=("password", ))
 
+users_pydanticOut = pydantic_model_creator(
+    User, name="UsersOut", exclude=("password", "email"))
+
 
 business_pydantic = pydantic_model_creator(Business, name="Business")
 business_pydanticIn = pydantic_model_creator(
