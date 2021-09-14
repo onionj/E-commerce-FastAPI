@@ -2,6 +2,7 @@
 *wal
 db*
 static/images/logo*
+static/images/product*
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]

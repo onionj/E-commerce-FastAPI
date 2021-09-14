@@ -1,11 +1,12 @@
+
 from fastapi import (FastAPI, status, Request,
-                     HTTPException, Depends)
+                     HTTPException, Depends, Query)
 from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
 # database
 from tortoise.contrib.fastapi import register_tortoise
 from models import (User, Business, Product,
-                    user_pydantic, user_pydanticIn, user_pydanticOut,
+                    user_pydantic, user_pydanticIn, user_pydanticOut, users_pydanticOut,
                     business_pydantic, business_pydanticIn,
                     product_pydantic, product_pydanticIn)
 
@@ -49,14 +50,8 @@ async def get_current_user(token: str = Depends(oauth_scheme)):
     return await very_token(token)
 
 
-@app.post("/user/me", tags=["User"])
-async def user_login(user: user_pydanticIn = Depends(get_current_user)):
-    if not user.is_verifide:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Email not verifide",
-            headers={"WWW-Authenticate": "Bearer"}
-        )
+@app.post("/users/me", tags=["User"])
+async def client_data(user: user_pydanticIn = Depends(get_current_user)):
     business = await Business.get(owner=user)
     return {
         "status": "ok",
@@ -68,6 +63,16 @@ async def user_login(user: user_pydanticIn = Depends(get_current_user)):
             "business": await business_pydantic.from_tortoise_orm(business)
         }
     }
+
+
+@app.get("/users/", tags=["User"], response_model=List[users_pydanticOut])
+async def get_users(user: user_pydanticIn = Depends(get_current_user),
+                    limit: int = Query(100, le=100),
+                    skip: int = Query(0, ge=0)
+                    ):
+
+    users = await User.filter(id__gt=skip, id__lte=skip+limit)
+    return users
 
 
 @post_save(User)
@@ -86,7 +91,7 @@ async def create_business(
         await send_mail([instance.email], instance)
 
 
-@app.post("/registration/", tags=["User"], status_code=status.HTTP_201_CREATED, response_model=user_pydanticOut)
+@app.post("/users/", tags=["User"], status_code=status.HTTP_201_CREATED, response_model=user_pydanticOut)
 async def user_registration(user: user_pydanticIn):
     user_info = user.dict(exclude_unset=True)
 
@@ -119,7 +124,7 @@ async def user_registration(user: user_pydanticIn):
 template = Jinja2Templates(directory="templates")
 
 
-@app.get("/verification", response_class=HTMLResponse, tags=["User"])
+@app.get("/verification/email", response_class=HTMLResponse, tags=["User"])
 async def email_verification(request: Request, token: str):
     user = await very_token_email(token)
     if user:
@@ -146,6 +151,7 @@ async def upload_profile_image(file: UploadFile = File(..., max_lenght=10485760)
 
     FILEPATH = "./static/images/"
     file_name = file.filename
+
     try:
         extension = file_name.split(".")[1]
     finally:
@@ -168,9 +174,8 @@ async def upload_profile_image(file: UploadFile = File(..., max_lenght=10485760)
     business = await Business.get(owner=user)
     owner = await business.owner
 
-    print(owner, user)
     if owner == user:
-        business.logo = generated_name
+        business.logo = generated_name[1:]
         await business.save()
         return await business_pydantic.from_tortoise_orm(business)
     else:
@@ -180,6 +185,49 @@ async def upload_profile_image(file: UploadFile = File(..., max_lenght=10485760)
             headers={"WWW-Authenticate": "Bearer"}
         )
 
+
+@app.post("/uploadfile/product/{id}", tags=["Product"])
+async def upload_product_image(
+        id: int,
+        file: UploadFile = File(..., max_lenght=10485760),
+        user: user_pydantic = Depends(get_current_user)):
+
+    FILEPATH = "./static/images/"
+    file_name = file.filename
+
+    try:
+        extension = file_name.split(".")[1]
+    finally:
+        if extension not in ["png", "jpg", "jpeg"]:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
+                                detail="File extension not allowed")
+
+    token_name = "product" + secrets.token_hex(10) + "." + extension
+    generated_name = FILEPATH + token_name
+    file_content = await file.read()
+
+    with open(generated_name, "wb") as f:
+        f.write(file_content)
+
+    product = await Product.get_or_none(id=id)
+    if product:
+        business = await product.business
+        owner = await business.owner
+    else:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Product Not Found"
+        )
+    if owner == user:
+        product.product_image = generated_name[1:]
+        await business.save()
+        return await product_pydantic.from_tortoise_orm(product)
+    else:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Not authenticated to perform this action",
+            headers={"WWW-Authenticate": "Bearer"}
+        )
 
 register_tortoise(
     app,
