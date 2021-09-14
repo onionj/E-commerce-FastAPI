@@ -1,3 +1,4 @@
+aiofiles==0.7.0
 aioredis==2.0.0
 aiosmtplib==1.1.6
 aiosqlite==0.17.0
@@ -26,9 +27,11 @@ Jinja2==3.0.1
 MarkupSafe==2.0.1
 packaging==21.0
 passlib==1.7.4
+Pillow==8.3.2
 pycodestyle==2.7.0
 pycparser==2.20
 pydantic==1.8.2
+PyJWT==2.1.0
 pyparsing==2.4.7
 pypika-tortoise==0.1.1
 python-dotenv==0.19.0
