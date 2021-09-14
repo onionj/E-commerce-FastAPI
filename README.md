@@ -3,7 +3,7 @@
 
 ## tech
 FastAPI \
-tortoise orm
+tortoise orm \
 jwt token
 
 # endpoints:
