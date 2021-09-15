@@ -15,7 +15,7 @@ def get_hashed_password(password):
 
 
 async def very_token(token: str):
-    '''verify token from email'''
+    '''verify token from login'''
     try:
         payload = jwt.decode(token, get_settings().SECRET,
                              algorithms=["HS256"])
@@ -65,12 +65,12 @@ async def verify_password(plain_password, database_hashed_password):
 async def authenticate_user(username: str, password: str):
     user = await User.get(username=username)
     if user and verify_password(password, user.password):
-        # if not user.is_verifide:
-        #     raise HTTPException(
-        #         status_code=status.HTTP_401_UNAUTHORIZED,
-        #         detail="Email not verifide",
-        #         headers={"WWW-Authenticate": "Bearer"}
-        #     )
+        if not user.is_verifide:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Email not verifide",
+                headers={"WWW-Authenticate": "Bearer"}
+            )
         return user
     return False
 
