@@ -1,6 +1,5 @@
 import re
 from passlib.context import CryptContext
-from passlib.utils.decor import deprecated_function
 from fastapi import HTTPException, status
 import jwt
 
