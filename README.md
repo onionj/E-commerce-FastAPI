@@ -1,4 +1,4 @@
- ## E-commerce API with FastAPI 
+ ## E-commerce backend with FastAPI 
 
 
 ## tech
@@ -8,4 +8,4 @@ jwt token
 
 # endpoints:
 
-coming soon
+![ENDPOINT](https://github.com/onionj/E-commerce-FastAPI/blob/master/Screenshot.png "E-commerce backend endpoint")
