@@ -6,10 +6,10 @@ from fastapi.templating import Jinja2Templates
 # database
 from tortoise.contrib.fastapi import register_tortoise
 from models import (User, Business, Product,
-                    user_pydantic, user_pydanticIn, user_pydanticOut, users_pydanticOut,
+                    user_pydantic, user_pydanticIn, user_pydanticOut,
                     business_pydantic, business_pydanticIn,
                     product_pydantic, product_pydanticIn)
-
+from datetime import datetime
 # authentication
 from authentication import (get_hashed_password,
                             very_token, very_token_email,
@@ -75,7 +75,7 @@ async def client_data(user: user_pydanticIn = Depends(get_current_user)):
     }
 
 
-@app.get("/users/", tags=["User"], response_model=List[users_pydanticOut])
+@app.get("/users/", tags=["User"], response_model=List[user_pydanticOut])
 async def get_users(user: user_pydanticIn = Depends(get_current_user),
                     limit: int = Query(100, le=100),
                     skip: int = Query(0, ge=0)
@@ -99,6 +99,28 @@ async def create_business(
         await business_pydantic.from_tortoise_orm(business_obj)
         # send the email
         await send_mail([instance.email], instance)
+
+
+@app.put("/business/{id}", response_model=business_pydantic, tags=["Business"])
+async def update_business(id: int,
+                          update_business: business_pydanticIn,
+                          user: user_pydantic = Depends(get_current_user)):
+
+    business = await Business.get(id=id)
+    owner = await business.owner
+
+    update_business = update_business.dict()
+
+    if user == owner:
+        await business.update_from_dict(update_business)
+        await business.save()
+        return await business_pydantic.from_tortoise_orm(business)
+
+    raise HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="Not authenticated to perform this action",
+        headers={"WWW-Authenticate": "Bearer"}
+    )
 
 
 @app.post("/users/", tags=["User"], status_code=status.HTTP_201_CREATED, response_model=user_pydanticOut)
@@ -188,12 +210,12 @@ async def upload_profile_image(file: UploadFile = File(..., max_lenght=10485760)
         business.logo = generated_name[1:]
         await business.save()
         return await business_pydantic.from_tortoise_orm(business)
-    else:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Not authenticated to perform this action",
-            headers={"WWW-Authenticate": "Bearer"}
-        )
+
+    raise HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="Not authenticated to perform this action",
+        headers={"WWW-Authenticate": "Bearer"}
+    )
 
 
 @app.post("/uploadfile/product/{id}", tags=["Product"])
@@ -230,7 +252,7 @@ async def upload_product_image(
         )
     if owner == user:
         product.product_image = generated_name[1:]
-        await business.save()
+        await product.save()
         return await product_pydantic.from_tortoise_orm(product)
     else:
         raise HTTPException(
@@ -238,6 +260,97 @@ async def upload_product_image(
             detail="Not authenticated to perform this action",
             headers={"WWW-Authenticate": "Bearer"}
         )
+
+
+@app.post("/products/", tags=["Product"], response_model=product_pydantic)
+async def add_new_product(product: product_pydanticIn,
+                          user: user_pydantic = Depends(get_current_user)):
+    product = product.dict(exclude_unset=True)
+
+    if product["original_price"] > 0:
+        product["percentage_discount"] = (
+            (product["original_price"] - product["new_price"]) / product["original_price"]) * 100
+
+        product_obj = await Product.create(**product, business=user)
+        product_obj = await product_pydantic.from_tortoise_orm(product_obj)
+        return product_obj
+
+    else:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
+                            detail="The original price must be greater than 0")
+
+
+@app.delete("/products/{id}", tags=["Product"], status_code=status.HTTP_204_NO_CONTENT)
+async def delete_product(id: int, user: user_pydantic = Depends(get_current_user)):
+    product = await Product.get(id=id)
+    business = await product.business
+    owner = await business.owner
+
+    if user == owner:
+        await product.delete()
+        return
+
+    raise HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="Not authenticated to perform this action",
+        headers={"WWW-Authenticate": "Bearer"}
+    )
+
+
+@app.put("/products/{id}", tags=["Product"])
+async def update_product(id: int,
+                         updated_product: product_pydanticIn,
+                         user: user_pydantic = Depends(get_current_user)):
+    product = await Product.get(id=id)
+    business = await product.business
+    owner = await business.owner
+
+    updated_product = updated_product.dict(exclude_unset=True)
+    updated_product["percentage_discount"] = (
+        (updated_product["original_price"] - updated_product["new_price"]) / updated_product["original_price"]) * 100
+
+    if user == owner and updated_product["original_price"] > 0:
+        await product.update_from_dict(updated_product)
+        await product.save()
+        return await product_pydantic.from_tortoise_orm(product)
+
+    raise HTTPException(
+        status_code=status.HTTP_400_UNAUTHORIZED,
+        detail="Not authenticated to perform this action or Invalid user input",
+        headers={"WWW-Authenticate": "Bearer"}
+    )
+
+
+@app.get("/products", tags=["Product"], response_model=List[product_pydantic])
+async def get_product_list(limit: int = Query(100, le=100),
+                           skip: int = Query(0, ge=0)):
+
+    response = await product_pydantic.from_queryset(Product.filter(id__gt=skip, id__lte=skip+limit))
+    return response
+
+
+@app.get("/products/{id}", tags=["Product"])
+async def get_product_detail(id: int):
+    product = await Product.get(id=id)
+    business = await product.business
+    owner = await business.owner
+    response = await product_pydantic.from_queryset_single(Product.get(id=id))
+    response = response.dict()
+    response["product_image"] = f'{SITE_URL}{response["product_image"]}'
+    return {
+        "product_details": response,
+        "business_detaild": {
+            "name": business.business_name,
+            "city": business.city,
+            "region": business.region,
+            "description": business.business_description,
+            "logo": f'{SITE_URL}{business.logo}',
+            "owner_id": owner.id,
+            "email": owner.email,
+            "join_date": owner.join_date.strftime("%b %d %Y")
+        }
+    }
+
 
 register_tortoise(
     app,
