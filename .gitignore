@@ -3,6 +3,8 @@
 db*
 static/images/logo*
 static/images/product*
+!productDefault.jpg
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
