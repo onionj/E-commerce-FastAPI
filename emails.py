@@ -7,8 +7,8 @@ import jwt
 
 from config import get_settings
 
-SITE_URL = "http://localhost:8000/"
-SITE_NAME = "my-shop"
+SITE_URL = get_settings().SITE_URL
+SITE_NAME = get_settings().SITE_NAME
 
 
 conf = ConnectionConfig(
@@ -54,7 +54,7 @@ async def send_mail(email: List[EmailStr], instance: User):
             
             <a style = "display:marign-top: 1rem ; padding: 1rem; border-redius: 0.5rem;
              font-size:1rem; text-decoration: no; background: #0275d8; color:white"
-             href="{SITE_URL}verification/email/?token={token}">
+             href="{SITE_URL}/verification/email/?token={token}">
                 Verify your email
              </a>
         </div>

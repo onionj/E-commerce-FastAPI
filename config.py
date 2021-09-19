@@ -17,6 +17,8 @@ class Settings(BaseSettings):
     USE_CREDENTIALS: bool
     VALIDATE_CERTS: bool
     SECRET: str
+    SITE_URL: str
+    SITE_NAME: str
 
     class Config:
         env_file = ".env"

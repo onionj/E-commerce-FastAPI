@@ -30,6 +30,10 @@ from fastapi.staticfiles import StaticFiles
 from PIL import Image
 import secrets
 
+# env file
+from config import get_settings
+SITE_URL = get_settings().SITE_URL
+
 
 app = FastAPI(title="E-commerce API", version="0.1.1",
               description=" E-commerce API created with FastAPI and jwt Authenticated")
@@ -53,7 +57,11 @@ async def get_current_user(token: str = Depends(oauth_scheme)):
 
 @app.post("/users/me", tags=["User"])
 async def client_data(user: user_pydanticIn = Depends(get_current_user)):
+
     business = await Business.get(owner=user)
+    logo = business.logo
+    logo = f'{SITE_URL}{logo}'
+
     return {
         "status": "ok",
         "data": {
@@ -61,6 +69,7 @@ async def client_data(user: user_pydanticIn = Depends(get_current_user)):
             "email": user.email,
             "is_verifide": user.is_verifide,
             "join_date": user.join_date.strftime("%b %d %Y"),
+            "logo": logo,
             "business": await business_pydantic.from_tortoise_orm(business)
         }
     }
