@@ -67,7 +67,7 @@ async def client_data(user: user_pydanticIn = Depends(get_current_user)):
         "data": {
             "username": user.username,
             "email": user.email,
-            "is_verifide": user.is_verifide,
+            "is_verified": user.is_verified,
             "join_date": user.join_date.strftime("%b %d %Y"),
             "logo": logo,
             "business": await business_pydantic.from_tortoise_orm(business)
@@ -160,12 +160,12 @@ template = Jinja2Templates(directory="templates")
 async def email_verification(request: Request, token: str):
     user = await very_token_email(token)
     if user:
-        if not user.is_verifide:
-            user.is_verifide = True
+        if not user.is_verified:
+            user.is_verified = True
             await user.save()
         context = {
             "request": request,
-            "is_verifide": user.is_verifide,
+            "is_verified": user.is_verified,
             "username": user.username
         }
         return template.TemplateResponse("verification.html", context)
