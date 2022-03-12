@@ -27,7 +27,7 @@ Jinja2==3.0.1
 MarkupSafe==2.0.1
 packaging==21.0
 passlib==1.7.4
-Pillow==8.3.2
+Pillow==9.0.1
 pycodestyle==2.7.0
 pycparser==2.20
 pydantic==1.8.2
